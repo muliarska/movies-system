@@ -1,26 +1,149 @@
-from flask import Blueprint, make_response, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.exceptions import abort
-from .database.models import Movies, get_movies, get_movie_by_title
-from config import Config
+import dataclasses
+from typing import List
 
-movies_bp = Blueprint('movies', __name__)
+from flask import Flask, request, redirect
+from flask import make_response, jsonify
+from werkzeug.exceptions import abort
+from dataclasses import dataclass
+
+app = Flask(__name__)
+
+# Movies API endpoint
+API_PATH = '/movies_api'
+TRENDING_NOW = API_PATH + '/trending_now/<username>'
+GET_MOVIES = API_PATH + '/movies/<username>'
+ADD_MOVIE = API_PATH + '/add_movie/<username>'
+SEARCH_MOVIE = API_PATH + '/search_movie/<title>/<username>'
+DELETE_MOVIE = API_PATH + '/delete_movie/<title>/<username>'
+ADD_TO_FAVOURITE = API_PATH + '/add_to_favourites/<title>/<username>'
+FAVOURITE_MOVIES = API_PATH + '/favourite_movies/<username>'
+
+
+# To store movies data
+@dataclass
+class Thumbnail:
+    type: str
+    client: str
+    size: int
+    path: str
+
+
+@dataclass
+class Media:
+    type: str
+    client: str
+    path: str
+
+
+@dataclass
+class Subtitles:
+    language: str
+    path: str
+
+
+@dataclass
+class Movie:
+    title: str
+    movie_type: str
+    ratings: int
+    duration: int
+    age_restriction: int
+    timestamp: int
+    thumbnails: List[Thumbnail]
+    media: List[Media]
+    subtitles: List[Subtitles]
+    description: str
+    cast: List[str]
+    genres: List[str]
+    category: str
+    production: str
+    country: str
+    is_favourite: bool
+
+
+# Example for query
+thumbnail = Thumbnail(
+    type='words',
+    client='netflix',
+    size=150,
+    path='./thumbnails'
+)
+
+media = Media(
+    type='short_video',
+    client='netflix',
+    path='./media'
+)
+
+subtitles = Subtitles(
+    language='ukrainian',
+    path='./subtitles'
+)
+
+movie = Movie(
+    title='Harry Potter',
+    movie_type='horror',
+    ratings=98,
+    duration=100,
+    age_restriction=13,
+    timestamp=1200,
+    thumbnails=[thumbnail],
+    media=[media],
+    subtitles=[subtitles],
+    description='...',
+    cast=['John Doe'],
+    genres=['horror', 'comedy', 'family'],
+    category='horror',
+    production='Britain Entertainment',
+    country='Britain',
+    is_favourite=True,
+)
+
+# movies_info = {_movie_title: Movie}
+movies_info = {
+    'harry_potter': movie
+}
+
+
+# TODO: Add database support.
+
+
+def get_movies_infos():
+    return list(movies_info.values())
+
+
+def get_movies_names():
+    return [movie.title for movie in get_movies_infos()]
+
+
+def get_movies():
+    return zip(get_movies_infos(), get_movies_names())
+
+
+def get_movie_by_title(title):
+    return movies_info[title]
 
 
 def confirm_identity(username):
-    if get_jwt_identity() != username:
-        abort(401)
+    # if get_jwt_identity() != username:
+    #     abort(401)
     return
 
 
+@app.route('/')
+def _():
+    return redirect(GET_MOVIES)
+
+
 # Fetches list of movies based on trending which has (> 95%) users ratings
-@movies_bp.route(Config.TRENDING_NOW, methods=['GET'])
-@jwt_required
+@app.route(TRENDING_NOW, methods=['GET'])
 def trending_now(username):
     confirm_identity(username)
 
-    movies = get_movies()
+    movies = get_movies_infos()
+    print(movies)
     trending = []
+
     for movie in movies:
         # Checking if movie has more than 95% ratings
         if movie.ratings > 95:
@@ -29,56 +152,54 @@ def trending_now(username):
 
 
 # Fetches list of movies based on username
-@movies_bp.route(Config.FETCH_MOVIES, methods=['GET'])
-@jwt_required
-def fetch_movies(username):
+@app.route(GET_MOVIES, methods=['GET'])
+def movies(username):
     confirm_identity(username)
-    movies = get_movies()
+    movies = get_movies_names()
     return make_response(jsonify(movies), 200)
 
 
 # User can search for movie based on the title
-@movies_bp.route(Config.SEARCH_MOVIE, methods=['GET'])
-@jwt_required
+@app.route(SEARCH_MOVIE, methods=['GET'])
 def search_movie(username, title):
     confirm_identity(username)
-    try:
+
+    if title in movies_info:
         movie = get_movie_by_title(title=title)
         return make_response(jsonify(movie), 200)
-    except Movies.DoesNotExist:
+    else:
         abort(404)
 
 
 # User can delete movie based on the title
-@movies_bp.route(Config.DELETE_MOVIE, methods=['DELETE'])
-@jwt_required
+@app.route(DELETE_MOVIE, methods=['GET', 'POST'])
 def delete_movie(username, title):
     confirm_identity(username)
-    movie = get_movie_by_title(title=title)
+    # movie = get_movie_by_title(title=title)
 
-    # Abort if no movie
-    if movie is None:
+    if title in movies_info:
+        del movies_info[title]
+    else:
         abort(404)
 
-    movie.delete()
     return make_response(jsonify({
         "success": 'Movie Deleted Successfully'
     }), 200)
 
 
 # User can add/remove movies as per their favourites
-@movies_bp.route(Config.ADD_TO_FAVOURITE, methods=['PUT'])
-@jwt_required
+@app.route(ADD_TO_FAVOURITE, methods=['POST'])
 def add_to_favourite(username, title):
     confirm_identity(username)
-    movie = get_movie_by_title(title=title)
 
-    # Abort if no movie found
-    if movie is None:
+    data = jsonify(request.form).json
+
+    if title in movies_info:
+        movies_info[title].is_favourite = request.json['is_favourite']
+    else:
         abort(404)
 
-    movie.update(is_favourite=request.json['is_favourite'])
-
+    print(data)
     if request.json['is_favourite']:
         message = title + ' has been added to your favourite'
     else:
@@ -90,37 +211,38 @@ def add_to_favourite(username, title):
 
 
 # Fetches list of favourite movies based on the username
-@movies_bp.route(Config.FAVOURITE_MOVIES, methods=['GET'])
-@jwt_required
+@app.route(FAVOURITE_MOVIES, methods=['GET'])
 def favourite_movies(username):
     confirm_identity(username)
-    movies = get_movie_by_title()
+
+    movies = [movie_name for movie_info, movie_name in get_movies() if movie_info.is_favourite]
+
     return make_response(jsonify(movies), 200)
 
 
 # User can add new movie into the database
-@movies_bp.route(Config.ADD_MOVIE, methods=['POST'])
-@jwt_required
+@app.route(ADD_MOVIE, methods=['POST'])
 def add_movie(username):
     confirm_identity(username)
     try:
-        movies = Movies(title=request.json['title'],
-                        movie_type=request.json['movie_type'],
-                        ratings=request.json['ratings'],
-                        duration=request.json['duration'],
-                        age_restriction=request.json['age_restriction'],
-                        timestamp=request.json['timestamp'],
-                        thumbnails=request.json['thumbnails'],
-                        media=request.json['media'],
-                        subtitles=request.json['subtitles'],
-                        description=request.json['description'],
-                        cast=request.json['cast'],
-                        genres=request.json['genres'],
-                        category=request.json['category'],
-                        production=request.json['production'],
-                        country=request.json['country'],
-                        is_favourite=request.json['is_favourite'])
-        movies.save()
+        title = '_'.join(request.json['title'].tolower().split())
+        movies_info[title] = Movie(title=request.json['title'],
+                                   movie_type=request.json['movie_type'],
+                                   ratings=request.json['ratings'],
+                                   duration=request.json['duration'],
+                                   age_restriction=request.json['age_restriction'],
+                                   timestamp=request.json['timestamp'],
+                                   thumbnails=request.json['thumbnails'],
+                                   media=request.json['media'],
+                                   subtitles=request.json['subtitles'],
+                                   description=request.json['description'],
+                                   cast=request.json['cast'],
+                                   genres=request.json['genres'],
+                                   category=request.json['category'],
+                                   production=request.json['production'],
+                                   country=request.json['country'],
+                                   is_favourite=request.json['is_favourite']
+                                   )
     except KeyError:
         abort(400)
 
@@ -129,16 +251,20 @@ def add_movie(username):
     }), 201)
 
 
-@movies_bp.errorhandler(400)
+@app.errorhandler(400)
 def invalid_request(error):
     return make_response(jsonify({'error': 'Invalid Request ' + error}))
 
 
-@movies_bp.errorhandler(404)
+@app.errorhandler(401)
+def unauthorized(error):
+    return make_response(jsonify({'error': 'Unauthorized Access'}), 401)
+
+
+@app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Movie not found'}), 404)
 
 
-@movies_bp.errorhandler(401)
-def unauthorized(error):
-    return make_response(jsonify({'error': 'Unauthorized Access'}), 401)
+if __name__ == '__main__':
+    app.run(debug=True)
