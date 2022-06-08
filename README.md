@@ -46,17 +46,6 @@ cd movies-system
 ```
 
 ### Docker Build
-```bash
-docker build -t movies-system -f docker/Dockerfile src/
-```
-
-```bash
-docker run -it --name python-container\
-           -p 5002:5000\
-           src/movies-system
-```
-
-----
 
 ```bash
 bash ./users-service/db_part/run-postgres.sh
