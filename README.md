@@ -115,10 +115,10 @@ Content-Type: application/json
 }
 ```
 
-#### sign_in
+#### log_in
 
 ```http request
-POST http://localhost:5001/movies_api/sign_in
+POST http://localhost:5001/movies_api/log_in
 Content-Type: application/json
 
 {
@@ -127,6 +127,27 @@ Content-Type: application/json
 }
 ```
 
+#### log_out
+
+```http request
+POST http://localhost:5001/movies_api/log_out
+Content-Type: application/json
+
+{
+  "username": "johndoe"
+}
+```
+
+#### check_log_in
+
+```http request
+POST http://localhost:5001/movies_api/check_log_in
+Content-Type: application/json
+
+{
+  "username": "johndoe"
+}
+```
 
 #### profile/[username]
 
