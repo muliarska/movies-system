@@ -1,28 +1,20 @@
 from flask import Flask, request, make_response, jsonify
-from flask_jwt_extended import create_access_token, JWTManager
 import variables as var
 from postgres_client import PostgresClient
+import requests
 import uuid
 import utils
 
 
 app = Flask(__name__)
 
-app.config["JWT_SECRET_KEY"] = "super-secret"
-jwt = JWTManager(app)
-
 postgres_client = PostgresClient(var.HOST, var.PORT, var.DB_NAME, var.PASSWORD, var.USER)
 postgres_client.connect()
 
 
-@app.route("/hello")
-def hello_world():
-    return "Hello, World!"
-
-
 @app.route(var.USER_PROFILE, methods=['GET'])
 def user_profile(username):
-    if not utils.login_validation(username):
+    if not utils.login_validation(username, postgres_client):
         return make_response(jsonify({
             'error': 'Incorrect username or not logged in user'
         }), 401)
@@ -36,7 +28,7 @@ def user_profile(username):
 
 @app.route(var.UPDATE_PROFILE, methods=['PUT'])
 def update_profile(username):
-    if not utils.login_validation(username):
+    if not utils.login_validation(username, postgres_client):
         return make_response(jsonify({
             'error': 'Incorrect username or not logged in user'
         }), 401)
@@ -59,7 +51,7 @@ def update_profile(username):
 @app.route(var.CHANGE_PASSWORD, methods=['PUT'])
 def change_password(username):
     if 'old_password' in request.json and 'new_password' in request.json:
-        if not utils.login_validation(username):
+        if not utils.login_validation(username, postgres_client):
             return make_response(jsonify({
                 'error': 'Incorrect username or not logged in user'
             }), 401)
@@ -82,7 +74,7 @@ def change_password(username):
 @app.route(var.DELETE_ACCOUNT, methods=['DELETE'])
 def delete_account(username):
     # Abort if there are no such username
-    if not utils.login_validation(username):
+    if not utils.login_validation(username, postgres_client):
         return make_response(jsonify({
             'error': 'Incorrect username or not logged in user'
         }), 401)
@@ -115,13 +107,10 @@ def log_in():
             'error': 'User needs to sign up first'
         }), 401)
 
-    # TODO: fix error: RuntimeError: You must initialize a JWTManager with this flask application before using this method
     if password == user[0][2]:
-        access_token = create_access_token(identity=username)
 
         postgres_client.update_record(user[0][0], 'log_in', True, var.TABLE_NAME)
         return make_response(jsonify({
-            'access_token': access_token,
             'name': user[0][3],
             'email': user[0][4],
             'dob': user[0][5]
@@ -132,22 +121,18 @@ def log_in():
         }), 401)
 
 
-# Create new account with the user details
 @app.route(var.LOG_OUT, methods=['POST'])
 def log_out():
     username = request.json['username']
 
-    if not utils.login_validation(username):
+    if not utils.login_validation(username, postgres_client):
         return make_response(jsonify({
             'error': 'Incorrect username or not logged in user'
         }), 401)
     user = postgres_client.select_user_by_username(username, var.TABLE_NAME)
-
-    user["log_in"] = False
+    postgres_client.update_record(user[0][0], 'log_in', False, var.TABLE_NAME)
     return make_response(jsonify({
-        'name': user["name"],
-        'email': user["email"],
-        'dob': user["dob"]
+        'success': "Logged out successfully"
     }), 200)
 
 
@@ -191,7 +176,7 @@ def sign_up():
 
     return make_response(jsonify({
         "success": 'User Created Successfully'
-    }), 201)
+    }), 200)
 
 
 if __name__ == '__main__':

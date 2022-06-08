@@ -4,27 +4,29 @@ from flask import make_response, jsonify
 import variables as var
 from cassandra_client import CassandraClient
 import uuid
+import requests
+import json
 
 app = Flask(__name__)
 
 client_cassandra = CassandraClient(var.HOST, var.PORT, var.KEYSPACE)
 client_cassandra.connect()
 
-def confirm_identity(username):
-    # if get_jwt_identity() != username:
-    #     abort(401)
-    return
-
-
-@app.route('/')
-def _():
-    return redirect(var.GET_MOVIES)
-
 
 # Fetches list of movies based on trending which has (> 95%) users ratings
 @app.route(var.TRENDING_NOW, methods=['GET'])
 def trending_now(username):
-    confirm_identity(username)
+
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                     headers={"Content-Type": "application/json"})
+
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
 
     trending_movies = client_cassandra.get_trending_movies(username, var.TRENDING_TABLE_NAME)
     trending = dict()
@@ -38,28 +40,49 @@ def trending_now(username):
 # Fetches list of movies based on username
 @app.route(var.GET_MOVIES, methods=['GET'])
 def movies(username):
-    confirm_identity(username)
-    movies_all = client_cassandra.get_movies_data(username, var.TRENDING_TABLE_NAME)
-    movies_ret = dict()
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                     headers={"Content-Type": "application/json"})
+
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
+    movies_all = client_cassandra.get_movies_data(username, var.MOVIES_TABLE_NAME)
+    movies_ret = {"columns": var.MOVIES_COLUMNS}
+    temp = {}
     i = 1
     for row in movies_all:
-        movies_ret[str(i)] = row
+        temp[str(i)] = row
         i += 1
+    movies_ret["rows"] = temp
     return make_response(jsonify(movies_ret), 200)
 
 
 # User can search for movie based on the title
 @app.route(var.SEARCH_MOVIE, methods=['GET'])
 def search_movie(username, title):
-    confirm_identity(username)
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                     headers={"Content-Type": "application/json"})
 
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
     movie_by_title = client_cassandra.get_by_title(username, title, var.MOVIES_TABLE_NAME)
     if movie_by_title:
-        movies_ret = dict()
+        movies_ret = {"columns": var.MOVIES_COLUMNS}
+        temp = {}
         i = 1
         for row in movie_by_title:
-            movies_ret[str(i)] = row
+            temp[str(i)] = row
             i += 1
+        movies_ret["rows"] = temp
         return make_response(jsonify(movies_ret), 200)
     else:
         return make_response(jsonify({
@@ -70,13 +93,25 @@ def search_movie(username, title):
 # User can delete movie based on the title
 @app.route(var.DELETE_MOVIE, methods=['DELETE'])
 def delete_movie(username, title):
-    confirm_identity(username)
 
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                     headers={"Content-Type": "application/json"})
 
-    movie = client_cassandra.get_by_title(username, title, var.MOVIES_TABLE_NAME)
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
+
+    movie_movie_table = client_cassandra.get_by_title(username, title, var.MOVIES_TABLE_NAME)
+    movie_favourites = client_cassandra.get_by_title(username, title, var.FAVOURITE_MOVIES)
+    movie_trending = client_cassandra.get_by_title(username, title, var.TRENDING_TABLE_NAME)
     if movie:
         tables = [var.MOVIES_TABLE_NAME, var.TRENDING_TABLE_NAME, var.FAVOURITE_MOVIES]
-        client_cassandra.delete_movie(username, title, tables)
+        ids = [movie_movie_table[0][0], movie_trending[0][0], movie_favourites[0][0]]
+        client_cassandra.delete_movie(ids, tables)
     else:
         return make_response(jsonify({
             "failure": 'Failed to Delete Movie'
@@ -90,7 +125,17 @@ def delete_movie(username, title):
 # User can add/remove movies as per their favourites
 @app.route(var.ADD_TO_FAVOURITE, methods=['PUT'])
 def add_to_favourite(username, title):
-    confirm_identity(username)
+
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                     headers={"Content-Type": "application/json"})
+
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
 
     movie = client_cassandra.get_by_title(username, title, var.MOVIES_TABLE_NAME)
     if movie:
@@ -111,13 +156,23 @@ def add_to_favourite(username, title):
 # Fetches list of favourite movies based on the username
 @app.route(var.FAVOURITE_MOVIES, methods=['GET'])
 def favourite_movies(username):
-    confirm_identity(username)
+
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                     headers={"Content-Type": "application/json"})
+
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
 
     moviess = client_cassandra.get_favourite_movies(username, var.FAVOURITES_TABLE_NAME)
     movies_dct = dict()
     i = 1
     for row in moviess:
-        movies_dct[str(i)] = row
+        movies_dct[str(i)] = row[1]
         i += 1
     return make_response(jsonify(movies_dct), 200)
 
@@ -125,8 +180,16 @@ def favourite_movies(username):
 # User can add new movie into the database
 @app.route(var.ADD_MOVIE, methods=['POST'])
 def add_movie(username):
-    confirm_identity(username)
+    data = {"username": username}
+    response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
+                                 headers={"Content-Type": "application/json"})
 
+    log_in = response.json()['log_in']
+
+    if not log_in:
+        return make_response(jsonify({
+                "failure": 'You are not logged in'
+            }), 404)
     id = str(uuid.uuid4())
     current_time = datetime.now()
     movies_data = (id, username, request.json['title'], request.json['movie_type'], request.json['ratings'],

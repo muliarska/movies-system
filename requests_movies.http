@@ -1,9 +1,9 @@
 ###
-POST http://localhost:5002/movies_api/add_movie/kokolusska
+POST http://localhost:5002/movies_api/add_movie/kokolusskaa
 Content-Type: application/json
 
 {
-  "title": "hey2",
+  "title": "Red",
   "movie_type": "comedy",
   "ratings": 97,
   "duration": 100,
@@ -19,30 +19,30 @@ Content-Type: application/json
 
 
 ###
-PUT http://localhost:5002/movies_api/add_to_favourites/hey5/kokolusska
+PUT http://localhost:5002/movies_api/add_to_favourites/Red/kokolusskaa
 Content-Type: application/json
 
 ###
-GET http://localhost:5002/movies_api/favourite_movies/kokolusska
+GET http://localhost:5002/movies_api/favourite_movies/kokolusskaa
 Content-Type: application/json
 
 
 ###  вертає лише 1 фільм чому?
-GET http://localhost:5002/movies_api/movies/kokolusska
+GET http://localhost:5002/movies_api/movies/kokolusskaa
 Content-Type: application/json
 
 
 ###
-GET http://localhost:5002/movies_api/search_movie/hey5/kokolusska
+GET http://localhost:5002/movies_api/search_movie/Red Notice/kokolusskaa
 Content-Type: application/json
 
 
 ###
-GET http://localhost:5002/movies_api/trending_now/kokolusska
+GET http://localhost:5002/movies_api/trending_now/kokolusskaa
 Content-Type: application/json
 
 
 ###
-DELETE http://localhost:5002/movies_api/delete_movie/hey5/kokolusska
+DELETE http://localhost:5002/movies_api/delete_movie/Red/kokolusskaa
 Content-Type: application/json
 
