@@ -1,0 +1,48 @@
+###
+POST http://localhost:5002/movies_api/add_movie/kokolusska
+Content-Type: application/json
+
+{
+  "title": "hey2",
+  "movie_type": "comedy",
+  "ratings": 97,
+  "duration": 100,
+  "age_restriction": 18,
+  "description": "great film",
+  "cast": "DiCaprio, Joli",
+  "genres": "comedy",
+  "category": "comedy",
+  "production": "great entertainment",
+  "country": "UA",
+  "is_favourite": "False"
+}
+
+
+###
+PUT http://localhost:5002/movies_api/add_to_favourites/hey5/kokolusska
+Content-Type: application/json
+
+###
+GET http://localhost:5002/movies_api/favourite_movies/kokolusska
+Content-Type: application/json
+
+
+###  вертає лише 1 фільм чому?
+GET http://localhost:5002/movies_api/movies/kokolusska
+Content-Type: application/json
+
+
+###
+GET http://localhost:5002/movies_api/search_movie/hey5/kokolusska
+Content-Type: application/json
+
+
+###
+GET http://localhost:5002/movies_api/trending_now/kokolusska
+Content-Type: application/json
+
+
+###
+DELETE http://localhost:5002/movies_api/delete_movie/hey5/kokolusska
+Content-Type: application/json
+

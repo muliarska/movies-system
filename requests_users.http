@@ -1,0 +1,67 @@
+###
+POST http://localhost:5001/movies_api/sign_up
+Content-Type: application/json
+
+{
+  "username": "kokolusskaa",
+  "email": "kokolusskaa@gmail.com",
+  "password": "Password12@",
+  "name":"Khrystyna",
+  "dob": "01-02-2002"
+}
+
+
+###
+POST http://localhost:5001/movies_api/sign_up
+Content-Type: application/json
+
+{
+  "username": "kokolusss",
+  "email": "kokolusskaa@gmail.com",
+  "password": "Password12@",
+  "name":"Khrystyna",
+  "dob": "01-02-2002"
+}
+
+
+###
+GET http://localhost:5001/movies_api/profile/kokolusskaa
+Content-Type: application/json
+
+
+###
+PUT http://localhost:5001/movies_api/change_password/kokolusskaa
+Content-Type: application/json
+
+{
+  "old_password": "Password12@",
+  "new_password": "Password13@"
+}
+
+
+###
+PUT http://localhost:5001/movies_api/update_profile/kokolusskaa
+Content-Type: application/json
+
+{
+  "name": "Khris"
+}
+
+
+###
+DELETE http://localhost:5001/movies_api/delete_account/kokolusss
+Content-Type: application/json
+
+{
+  "password": "Password12@"
+}
+
+
+###
+POST http://localhost:5001/movies_api/sign_in
+Content-Type: application/json
+
+{
+  "username": "kokolusskaa",
+  "password": "Password13@"
+}
