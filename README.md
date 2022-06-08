@@ -76,7 +76,8 @@ The movie interaction system is build upon introducing the identity mapping.
 <br />
 
 
-<img width="846" alt="image" src="https://user-images.githubusercontent.com/25413268/172669919-9ac8c8ea-81f0-4c48-a7a6-f9903fbf1483.png">
+<img width="846" alt="image" src="https://user-images.githubusercontent.com/25413268/172674486-7e4a0176-8f12-4c09-9d0c-5ec7a7e2b3bd.png">
+
 
 
 In this project, you will find different types of microservices:
