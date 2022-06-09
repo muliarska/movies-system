@@ -269,7 +269,7 @@ Content-Type: application/json
 #### movies_api/[movie_name]/[user]
 
 ```http request
-DELETE http://localhost:5002/movies_api/delete_movie/hey5/johndoex`
+DELETE http://localhost:5002/movies_api/delete_movie/hey5/johndoe`
 Content-Type: application/json
 ```
 
