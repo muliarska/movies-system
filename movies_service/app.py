@@ -21,7 +21,12 @@ def trending_now(username):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                      headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
@@ -44,7 +49,12 @@ def movies(username):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                      headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
@@ -68,7 +78,12 @@ def search_movie(username, title):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                      headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
@@ -98,7 +113,12 @@ def delete_movie(username, title):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                      headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
@@ -106,11 +126,14 @@ def delete_movie(username, title):
             }), 404)
 
     movie_movie_table = client_cassandra.get_by_title(username, title, var.MOVIES_TABLE_NAME)
-    movie_favourites = client_cassandra.get_by_title(username, title, var.FAVOURITE_MOVIES)
-    movie_trending = client_cassandra.get_by_title(username, title, var.TRENDING_TABLE_NAME)
-    if movie:
-        tables = [var.MOVIES_TABLE_NAME, var.TRENDING_TABLE_NAME, var.FAVOURITE_MOVIES]
-        ids = [movie_movie_table[0][0], movie_trending[0][0], movie_favourites[0][0]]
+    fv_movie = client_cassandra.get_by_title(username, title, var.FAVOURITES_TABLE_NAME)
+    if fv_movie:
+        tables = [var.MOVIES_TABLE_NAME, var.FAVOURITES_TABLE_NAME]
+        ids = [movie_movie_table[0][0], fv_movie[0][0]]
+        client_cassandra.delete_movie(ids, tables)
+    elif movie_movie_table:
+        tables = [var.MOVIES_TABLE_NAME]
+        ids = [movie_movie_table[0][0]]
         client_cassandra.delete_movie(ids, tables)
     else:
         return make_response(jsonify({
@@ -130,7 +153,12 @@ def add_to_favourite(username, title):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                      headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
@@ -141,7 +169,7 @@ def add_to_favourite(username, title):
     if movie:
         current_time = datetime.now()
         id = str(uuid.uuid4())
-        movies_favourites_data = (id, username, movie[0][1], True, current_time, current_time)
+        movies_favourites_data = (id, username, movie[0][2], True, current_time, current_time)
         client_cassandra.insert_favourite_movies_data(movies_favourites_data, var.FAVOURITES_TABLE_NAME)
     else:
         return make_response(jsonify({
@@ -161,18 +189,24 @@ def favourite_movies(username):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                      headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
                 "failure": 'You are not logged in'
             }), 404)
 
-    moviess = client_cassandra.get_favourite_movies(username, var.FAVOURITES_TABLE_NAME)
+    data_movies = client_cassandra.get_favourite_movies(username, var.FAVOURITES_TABLE_NAME)
     movies_dct = dict()
     i = 1
-    for row in moviess:
-        movies_dct[str(i)] = row[1]
+    for row in data_movies:
+        print(row)
+        movies_dct[str(i)] = row
         i += 1
     return make_response(jsonify(movies_dct), 200)
 
@@ -184,7 +218,12 @@ def add_movie(username):
     response = requests.post(url=var.users_service_check_log_in, data=json.dumps(data),
                                  headers={"Content-Type": "application/json"})
 
-    log_in = response.json()['log_in']
+    try:
+        log_in = response.json()['log_in']
+    except KeyError:
+        return make_response(jsonify({
+                        "failure": 'Such user does not exist'
+                    }), 404)
 
     if not log_in:
         return make_response(jsonify({
@@ -192,6 +231,11 @@ def add_movie(username):
             }), 404)
     id = str(uuid.uuid4())
     current_time = datetime.now()
+    movie = client_cassandra.get_by_username(username, var.MOVIES_TABLE_NAME)
+    if movie:
+        return make_response(jsonify({
+                "success": 'Such movie was added earlier'
+            }), 200)
     movies_data = (id, username, request.json['title'], request.json['movie_type'], request.json['ratings'],
                    request.json['duration'], request.json['age_restriction'], request.json['description'],
                    request.json['cast'], request.json['genres'], request.json['category'], request.json['production'],
@@ -210,7 +254,7 @@ def add_movie(username):
 
     return make_response(jsonify({
         "success": 'Movie Added Successfully'
-    }), 201)
+    }), 200)
 
 
 @app.errorhandler(400)

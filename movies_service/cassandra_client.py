@@ -30,18 +30,18 @@ class CassandraClient:
         data = self.execute(query)
         return data
 
+    def get_by_username(self, username, table_name):
+        query = f"SELECT title FROM {table_name} WHERE username = '{username}' ALLOW FILTERING;"
+        data = self.execute(query)
+        return data
+
     def delete_movie(self, ids, table_names):
         for i in range(len(table_names)):
             query = f"DELETE FROM {table_names[i]} WHERE id = '{ids[i]}';"
             self.execute(query)
 
-    def update_favourite_movies(self, username, title,  table_name):
-        current_time = datetime.now()
-        query = f"UPDATE {table_name} SET is_favourite = {True}, updated_at = '{current_time}' WHERE username = '{username}' AND title = '{title}';"
-        self.execute(query)
-
     def get_favourite_movies(self, username, table_name):
-        query = f"SELECT * FROM {table_name} WHERE username = '{username}' ALLOW FILTERING;"
+        query = f"SELECT title FROM {table_name} WHERE username = '{username}' ALLOW FILTERING;"
         data = self.execute(query)
         return data
 

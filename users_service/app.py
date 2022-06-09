@@ -1,7 +1,6 @@
 from flask import Flask, request, make_response, jsonify
 import variables as var
 from postgres_client import PostgresClient
-import requests
 import uuid
 import utils
 

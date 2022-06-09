@@ -3,7 +3,7 @@ POST http://localhost:5002/movies_api/add_movie/kokolusskaa
 Content-Type: application/json
 
 {
-  "title": "Red",
+  "title": "The Hating Game",
   "movie_type": "comedy",
   "ratings": 97,
   "duration": 100,
@@ -19,7 +19,7 @@ Content-Type: application/json
 
 
 ###
-PUT http://localhost:5002/movies_api/add_to_favourites/Red/kokolusskaa
+PUT http://localhost:5002/movies_api/add_to_favourites/The Hating Game/kokolusskaa
 Content-Type: application/json
 
 ###
@@ -27,13 +27,13 @@ GET http://localhost:5002/movies_api/favourite_movies/kokolusskaa
 Content-Type: application/json
 
 
-###  вертає лише 1 фільм чому?
+###
 GET http://localhost:5002/movies_api/movies/kokolusskaa
 Content-Type: application/json
 
 
 ###
-GET http://localhost:5002/movies_api/search_movie/Red Notice/kokolusskaa
+GET http://localhost:5002/movies_api/search_movie/The Hating Game/kokolusskaa
 Content-Type: application/json
 
 
@@ -43,6 +43,6 @@ Content-Type: application/json
 
 
 ###
-DELETE http://localhost:5002/movies_api/delete_movie/Red/kokolusskaa
+DELETE http://localhost:5002/movies_api/delete_movie/Senior Year/kokolusskaa
 Content-Type: application/json
 

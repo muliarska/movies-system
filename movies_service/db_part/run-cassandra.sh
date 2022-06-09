@@ -9,5 +9,5 @@ else
 fi
 
 sleep 80s
-docker cp ddl.cql cassandra-node:/
+docker cp db_part/ddl.cql cassandra-node:/
 docker exec cassandra-node cqlsh -f ddl.cql

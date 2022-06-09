@@ -48,13 +48,15 @@ cd movies-system
 ### Docker Build
 
 ```bash
-bash ./users-service/db_part/run-postgres.sh
-bash ./users-service/run-service.sh
+cd users_service
+bash db_part/run-postgres.sh
+bash run-service.sh
 ```
 
 ```bash
-bash ./movies_service/db_part/run-cassandra.sh
-bash ./movies_service/run-service.sh
+cd movies_service
+bash db_part/run-cassandra.sh
+bash run-service.sh
 ```
 
 The application is now running on `5001, 5002` ports
